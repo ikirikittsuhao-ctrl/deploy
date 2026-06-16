@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Code Runner</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Consolas, Monaco, monospace;
+    }
+
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: #e5e7eb;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 12px 16px;
+      background: #020617;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 16px;
+      margin: 0;
+    }
+
+    /* ヘッダー右側のボタン配置用 */
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    /* 3点リーダー・ドロップダウンのスタイル */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .menu-trigger {
+      background: transparent;
+      color: #94a3b8;
+      border: none;
+      padding: 6px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .menu-trigger:hover {
+      background: #1e293b;
+      color: #f8fafc;
+    }
+
+    .menu-trigger .material-icons {
+      font-size: 24px;
+    }
+
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 100%;
+      margin-top: 8px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      min-width: 160px;
+      overflow: hidden;
+    }
+
+    .dropdown-menu.show {
+      display: block;
+    }
+
+    .dropdown-item {
+      width: 100%;
+      background: transparent;
+      color: #e2e8f0;
+      border: none;
+      border-radius: 0;
+      padding: 10px 16px;
+      font-size: 14px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dropdown-item:hover {
+      background: #334155;
+    }
+
+    .dropdown-item .material-icons {
+      font-size: 18px;
+      color: #94a3b8;
+    }
+
+    .editors {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      padding: 8px;
+    }
+
+    .editor {
+      display: flex;
+      flex-direction: column;
+      background: #020617;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .editor label {
+      padding: 6px 10px;
+      font-size: 12px;
+      background: #020617;
+      color: #93c5fd;
+      border-bottom: 1px solid #1e293b;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    textarea {
+      flex: 1;
+      background: #020617;
+      color: #e5e7eb;
+      border: none;
+      padding: 10px;
+      resize: none;
+      outline: none;
+      font-size: 14px;
+    }
+
+    /* モーダル背景（オーバーレイ） */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: flex-end; /* 下から出すための配置 */
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+    }
+
+    /* モーダルがアクティブな時の背景 */
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* 下からアニメーションするモーダル本体 */
+    .modal-content {
+      background: #1e293b;
+      width: 100%;
+      max-width: 600px;
+      border-radius: 16px 16px 0 0; /* 上側だけ丸みを持たせる */
+      padding: 24px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.32, 0.94, 0.6, 1);
+    }
+
+    /* モーダルがアクティブな時の本体の移動 */
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 12px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 18px;
+      color: #f8fafc;
+    }
+
+    .close-btn {
+      background: transparent;
+      font-size: 20px;
+      padding: 4px 8px;
+      color: #94a3b8;
+    }
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f8fafc;
+    }
+
+    /* 保存一覧のリスト */
+    .data-list {
+      overflow-y: auto;
+      flex: 1;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .data-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px;
+      background: #0f172a;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .data-item:hover {
+      background: #1e293b;
+      outline: 1px solid #3b82f6;
+    }
+
+    .data-name {
+      font-weight: bold;
+      color: #e2e8f0;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .delete-btn {
+      background: #ef4444;
+      padding: 4px 12px;
+      font-size: 12px;
+    }
+    .delete-btn:hover {
+      background: #dc2626;
+    }
+
+    .empty-message {
+      text-align: center;
+      color: #94a3b8;
+      padding: 20px 0;
+    }
+
+    /* 独自UIダイアログ用（中央にポップアップ表示） */
+    .custom-dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 2000;
+    }
+
+    .custom-dialog-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .custom-dialog {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      border: 1px solid #334155;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .custom-dialog h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 16px;
+      color: #f8fafc;
+    }
+
+    .custom-dialog p {
+      font-size: 14px;
+      color: #cbd5e1;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .custom-dialog input {
+      width: 100%;
+      padding: 8px 12px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      color: #e5e7eb;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 16px;
+    }
+
+    .custom-dialog input:focus {
+      border-color: #2563eb;
+    }
+
+    .dialog-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .dialog-btn-cancel {
+      background: #475569;
+    }
+    .dialog-btn-cancel:hover {
+      background: #334155;
+    }
+
+    .dialog-btn-danger {
+      background: #ef4444;
+    }
+    .dialog-btn-danger:hover {
+      background: #dc2626;
+    }
+
+    /* デプロイ結果表示用のスタイル */
+    .deploy-success-box {
+      background: #0f172a;
+      border: 1px solid #233554;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .url-display {
+      background: #020617;
+      padding: 10px;
+      border-radius: 4px;
+      color: #34d399;
+      word-break: break-all;
+      font-size: 13px;
+      margin: 10px 0;
+      border: 1px solid #1e293b;
+    }
+    
+    /* セレクションダイアログ用のボタン配置調整 */
+    .selection-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .selection-buttons button {
+      width: 100%;
+      padding: 12px;
+      text-align: center;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>💻 Code Runner</h1>
+    <div class="actions">
+      <div class="dropdown">
+        <button class="menu-trigger" onclick="toggleMenu(event)" title="メニュー">
+          <span class="material-icons">more_vert</span>
+        </button>
+        <div class="dropdown-menu" id="dropdownMenu">
+          <button class="dropdown-item" onclick="triggerSave()">
+            <span class="material-icons">save</span>保存
+          </button>
+          <button class="dropdown-item" onclick="triggerList()">
+            <span class="material-icons">folder</span>一覧
+          </button>
+          <button class="dropdown-item" onclick="triggerCopy()">
+            <span class="material-icons">content_copy</span>コードコピー
+          </button>
+        </div>
+      </div>
+      <button onclick="runCode()" style="background: #10b981;">▶ デプロイ</button>
+    </div>
+  </header>
+
+  <div class="editors">
+    <div class="editor">
+      <label ondblclick="copySingleEditor('html', 'HTML')">HTML</label>
+      <textarea id="html">
+<h1>Hello World</h1>
+<p>HTMLが表示されます</p>
+      </textarea>
+    </div>
+
+    <div class="editor">
+      <label ondblclick="copySingleEditor('css', 'CSS')">CSS</label>
+      <textarea id="css">
+body {
+  background: #111827;
+  color: #38bdf8;
+  font-family: sans-serif;
+}
+      </textarea>
+    </div>
+
+    <div class="editor">
+      <label ondblclick="copySingleEditor('js', 'JavaScript')">JavaScript</label>
+      <textarea id="js">
+console.log("Hello JavaScript!");
+      </textarea>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>保存データ一覧</h2>
+        <button class="close-btn" onclick="closeModal()">×</button>
+      </div>
+      <ul class="data-list" id="dataList">
+      </ul>
+    </div>
+  </div>
+
+  <div class="custom-dialog-overlay" id="dialogOverlay">
+    <div class="custom-dialog" id="dialogContent">
+      </div>
+  </div>
+
+  <script>
+    let currentProjectId = null;
+
+    // ▶ デプロイボタンを押した時に選択を迫るメニュー
+    function runCode() {
+      // 既存のプロジェクトIDがあるかどうかでボタンを無効化/有効化する条件分岐用の文言
+      const updateButtonDisabled = currentProjectId ? "" : "disabled style='background:#475569; cursor:not-allowed; opacity:0.5;'";
+
+      const selectionHtml = `
+        <h3>🛠 実行アクションの選択</h3>
+        <p>このコードをどのように処理しますか？目的のアクションを選択してください。</p>
+        <div class="selection-buttons">
+          <button onclick="executeDeployAction(false)" style="background: #10b981;">✨ 新規プロジェクトとしてデプロイ</button>
+          <button onclick="executeDeployAction(true)" ${updateButtonDisabled} style="background: #2563eb;">🔄 既存のプロジェクトを更新する (ID: ${currentProjectId || 'なし'})</button>
+          <button onclick="executeTestAction()" style="background: #f59e0b;">🧪 デプロイせずにテスト実行する</button>
+        </div>
+        <div class="dialog-buttons" style="margin-top: 15px;">
+          <button class="dialog-btn-cancel" onclick="closeCustomDialog()">キャンセル</button>
+        </div>
+      `;
+      openCustomDialog(selectionHtml);
+    }
+
+    // 選択肢①または②: 実際にTursoへデプロイする処理
+    async function executeDeployAction(isUpdate) {
+      // 既存のプロジェクトを更新しない（新規デプロイ）場合は一度サーバー送信用の一時IDをクリアする
+      const sendId = isUpdate ? currentProjectId : null;
+
+      const html = document.getElementById("html").value;
+      const css = document.getElementById("css").value;
+      const js = document.getElementById("js").value;
+
+      closeCustomDialog(); // 選択メニューを閉じる
+
+      try {
+        const response = await fetch('/api/deploy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: sendId, html, css, js })
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          currentProjectId = data.id; 
+          const fullUrl = window.location.origin + '/' + data.id;
+
+          const statsRes = await fetch(`/api/stats/${data.id}`);
+          const stats = await statsRes.json();
+
+          const resultHtml = `
+            <h3>🚀 デプロイに成功しました！</h3>
+            <p>このURLを共有すると、他の人もあなたの作ったアプリをLocalStorageキャッシュ爆速モードで利用できます。</p>
+            <div class="url-display" id="deployedUrl">${fullUrl}</div>
+            <div class="deploy-success-box">
+              📊 <b>現在の統計データ</b><br>
+              ・現在のバージョン: v${stats.version}<br>
+              ・これまでの累計アクセス数: ${stats.views} 回
+            </div>
+            <div class="dialog-buttons" style="margin-top:15px;">
+              <button class="dialog-btn-cancel" onclick="copyToClipboard('${fullUrl}', 'URLをコピーしました！')">URLをコピー</button>
+              <button onclick="window.open('${fullUrl}', '_blank')">サイトを開く</button>
+              <button onclick="closeCustomDialog()" style="background:#475569;">閉じる</button>
+            </div>
+          `;
+          openCustomDialog(resultHtml);
+        } else {
+          showCustomAlert("デプロイエラー", data.error || "保存に失敗しました。");
+        }
+      } catch (e) {
+        showCustomAlert("通信エラー", "サーバーに接続できませんでした。");
+      }
+    }
+
+    // 選択肢③: デプロイせずにテスト実行する処理
+    function executeTestAction() {
+      closeCustomDialog(); // 選択メニューを閉じる
+
+      const html = document.getElementById("html").value;
+      const css = document.getElementById("css").value;
+      const js = document.getElementById("js").value;
+
+      const result = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>${css}</style>
+</head>
+<body>
+${html}
+<script>
+${js}
+<\/script>
+</body>
+</html>
+      `;
+
+      const win = window.open();
+      win.document.open();
+      win.document.write(result);
+      win.document.close();
+    }
+
+    // メメニューの開閉制御
+    function toggleMenu(event) {
+      event.stopPropagation();
+      const menu = document.getElementById("dropdownMenu");
+      menu.classList.toggle("show");
+    }
+
+    window.addEventListener("click", function() {
+      const menu = document.getElementById("dropdownMenu");
+      if (menu.classList.contains("show")) {
+        menu.classList.remove("show");
+      }
+    });
+
+    function triggerSave() {
+      document.getElementById("dropdownMenu").classList.remove("show");
+      saveCode();
+    }
+
+    function triggerList() {
+      document.getElementById("dropdownMenu").classList.remove("show");
+      openModal();
+    }
+
+    function copyToClipboard(text, successMessage) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showCustomAlert("完了", successMessage);
+        }).catch(() => {
+          fallbackCopyToClipboard(text, successMessage);
+        });
+      } else {
+        fallbackCopyToClipboard(text, successMessage);
+      }
+    }
+
+    function fallbackCopyToClipboard(text, successMessage) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showCustomAlert("完了", successMessage);
+        } else {
+          showCustomAlert("エラー", "コピーに失敗しました。");
+        }
+      } catch (err) {
+        showCustomAlert("エラー", "コピーに失敗しました。");
+      }
+      document.body.removeChild(textArea);
+    }
+
+    function triggerCopy() {
+      const html = document.getElementById("html").value;
+      const css = document.getElementById("css").value;
+      const js = document.getElementById("js").value;
+
+      const combinedCode = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+${css}
+</style>
+</head>
+<body>
+${html}
+<script>
+${js}
+<\/script>
+</body>
+</html>`;
+
+      copyToClipboard(combinedCode, "コードをクリップボードにコピーしました！");
+      document.getElementById("dropdownMenu").classList.remove("show");
+    }
+
+    function copySingleEditor(id, labelName) {
+      const code = document.getElementById(id).value;
+      copyToClipboard(code, `${labelName}のコードをクリップボードにコピーしました！`);
+    }
+
+    function openCustomDialog(htmlContent) {
+      const overlay = document.getElementById("dialogOverlay");
+      const content = document.getElementById("dialogContent");
+      content.innerHTML = htmlContent;
+      overlay.classList.add("active");
+    }
+
+    function closeCustomDialog() {
+      const overlay = document.getElementById("dialogOverlay");
+      overlay.classList.remove("active");
+    }
+
+    function showCustomAlert(title, text, callback) {
+      const html = `
+        <h3>${title}</h3>
+        <p>${text}</p>
+        <div class="dialog-buttons">
+          <button onclick="closeCustomDialog(); if(${callback}) ${callback}();">OK</button>
+        </div>
+      `;
+      openCustomDialog(html);
+    }
+
+    function getSavedData() {
+      const data = localStorage.getItem('codeRunnerData');
+      return data ? JSON.parse(data) : {};
+    }
+
+    function saveCode() {
+      const htmlContent = `
+        <h3>データのローカル保存</h3>
+        <p>ブラウザ(LocalStorage)に保存する名前を入力してください：</p>
+        <input type="text" id="saveNameInput" placeholder="名前を入力してください">
+        <div class="dialog-buttons">
+          <button class="dialog-btn-cancel" onclick="closeCustomDialog()">キャンセル</button>
+          <button onclick="executeSave()">保存</button>
+        </div>
+      `;
+      openCustomDialog(htmlContent);
+      setTimeout(() => document.getElementById("saveNameInput").focus(), 50);
+    }
+
+    function executeSave() {
+      const nameInput = document.getElementById("saveNameInput");
+      const name = nameInput.value.trim();
+
+      if (!name) {
+        nameInput.focus();
+        return;
+      }
+
+      const html = document.getElementById("html").value;
+      const css = document.getElementById("css").value;
+      const js = document.getElementById("js").value;
+
+      const savedData = getSavedData();
+      savedData[name] = { html, css, js };
+
+      localStorage.setItem('codeRunnerData', JSON.stringify(savedData));
+      closeCustomDialog();
+      
+      showCustomAlert("保存完了", `「${name}」としてブラウザに保存しました！`);
+    }
+
+    function openModal() {
+      const overlay = document.getElementById("modalOverlay");
+      const listContainer = document.getElementById("dataList");
+      listContainer.innerHTML = "";
+
+      const savedData = getSavedData();
+      const keys = Object.keys(savedData);
+
+      if (keys.length === 0) {
+        listContainer.innerHTML = '<li class="empty-message">ローカル保存されたデータはありません</li>';
+      } else {
+        keys.forEach(key => {
+          const li = document.createElement("li");
+          li.className = "data-item";
+          li.setAttribute("onclick", `confirmLoad('${key}')`);
+          li.innerHTML = `
+            <span class="data-name">${key}</span>
+            <div class="item-actions">
+              <button class="delete-btn" onclick="event.stopPropagation(); confirmDelete('${key}')">削除</button>
+            </div>
+          `;
+          listContainer.appendChild(li);
+        });
+      }
+
+      overlay.classList.add("active");
+    }
+
+    document.getElementById("modalOverlay").addEventListener("click", closeModal);
+
+    function closeModal(event) {
+      const overlay = document.getElementById("modalOverlay");
+      overlay.classList.remove("active");
+    }
+
+    function confirmLoad(key) {
+      const htmlContent = `
+        <h3>データの読込確認</h3>
+        <p>「${key}」を読み込みますか？<br><span style="color: #ef4444; font-size: 12px;">※現在エディタに入力されているコードは上書きされます。</span></p>
+        <div class="dialog-buttons">
+          <button class="dialog-btn-cancel" onclick="closeCustomDialog()">キャンセル</button>
+          <button onclick="executeLoad('${key}')">読み込む</button>
+        </div>
+      `;
+      openCustomDialog(htmlContent);
+    }
+
+    function executeLoad(key) {
+      closeCustomDialog();
+      const savedData = getSavedData();
+      if (savedData[key]) {
+        document.getElementById("html").value = savedData[key].html;
+        document.getElementById("css").value = savedData[key].css;
+        document.getElementById("js").value = savedData[key].js;
+        currentProjectId = null; 
+        closeModal();
+        showCustomAlert("読込完了", `「${key}」を読み込みました。`);
+      }
+    }
+
+    function confirmDelete(key) {
+      const htmlContent = `
+        <h3>データの削除</h3>
+        <p>「${key}」を削除してもよろしいですか？</p>
+        <div class="dialog-buttons">
+          <button class="dialog-btn-cancel" onclick="closeCustomDialog()">キャンセル</button>
+          <button class="dialog-btn-danger" onclick="executeDelete('${key}')">削除する</button>
+        </div>
+      `;
+      openCustomDialog(htmlContent);
+    }
+
+    function executeDelete(key) {
+      closeCustomDialog();
+      const savedData = getSavedData();
+      delete savedData[key];
+      localStorage.setItem('codeRunnerData', JSON.stringify(savedData));
+      openModal();
+    }
+  </script>
+</body>
+</html>
