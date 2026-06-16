@@ -37,6 +37,7 @@ ${html}
   try {
     let projectId = id;
     let nextVersion = 1;
+    let isExisting = false;
 
     if (projectId) {
       const existing = await db.execute({
@@ -45,18 +46,24 @@ ${html}
       });
       if (existing.rows.length > 0) {
         nextVersion = existing.rows[0].version + 1;
+        isExisting = true;
       }
     } else {
       projectId = 'cr-' + crypto.randomBytes(4).toString('hex');
     }
 
-    await db.execute({
-      sql: `
-        INSERT INTO pages (id, html_content, version) VALUES (?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET html_content=excluded.html_content, version=excluded.version
-      `,
-      args: [projectId, combinedHtml, nextVersion]
-    });
+    // ON CONFLICT を使わず、明示的な分岐でINSERT/UPDATEを行うことでTursoのマイグレーションジョブエラーを回避
+    if (isExisting) {
+      await db.execute({
+        sql: "UPDATE pages SET html_content = ?, version = ? WHERE id = ?",
+        args: [combinedHtml, nextVersion, projectId]
+      });
+    } else {
+      await db.execute({
+        sql: "INSERT INTO pages (id, html_content, version) VALUES (?, ?, ?)",
+        args: [projectId, combinedHtml, nextVersion]
+      });
+    }
 
     res.json({ success: true, id: projectId, version: nextVersion });
   } catch (error) {
