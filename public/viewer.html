@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Viewer - Code Runner</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0f172a; }
+    
+    /* アプリ本体を展開するコンテナ */
+    #appContainer { width: 100%; height: 100%; border: none; margin: 0; padding: 0; }
+
+    /* 薄目の色で構成した開閉可能サイドバー */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100%;
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(8px);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
+      z-index: 9999;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      color: #e2e8f0;
+      font-family: Consolas, Monaco, monospace;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    /* 開閉トリガーボタン */
+    .toggle-trigger {
+      position: absolute;
+      top: 16px;
+      left: 100%;
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-left: none;
+      color: #94a3b8;
+      padding: 10px 6px;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 3px 0 10px rgba(0, 0, 0, 0.2);
+    }
+    .toggle-trigger:hover { color: #f8fafc; background: rgba(30, 41, 59, 0.95); }
+
+    .sidebar-content { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+    .sidebar-title { font-size: 15px; font-weight: bold; color: #38bdf8; margin: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; }
+    
+    .info-item { font-size: 13px; color: #cbd5e1; line-height: 1.5; }
+    .info-item b { color: #ffffff; }
+
+    .btn-copy {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+      margin-top: auto;
+    }
+    .btn-copy:hover { background: #1d4ed8; }
+
+    /* トースト通知 */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #10b981;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: bold;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease;
+      z-index: 10000;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <button class="toggle-trigger" onclick="toggleSidebar()" id="triggerBtn">
+      <span class="material-icons" id="triggerIcon">menu</span>
+    </button>
+    <div class="sidebar-content">
+      <h3 class="sidebar-title">🔍 APP INSPECTOR</h3>
+      <div class="info-item">
+        プロジェクトID:<br>
+        <span id="displayId" style="color: #34d399; font-weight: bold; word-break: break-all;">-</span>
+      </div>
+      <div class="info-item">
+        ・現在のバージョン: <b id="displayVersion">-</b><br>
+        ・累計アクセス数: <b id="displayViews">-</b> 回
+      </div>
+      <button class="btn-copy" onclick="copySource()"><span class="material-icons">content_copy</span>コードをコピー</button>
+    </div>
+  </div>
+
+  <iframe id="appContainer"></iframe>
+
+  <div class="toast" id="toast">ソースコードをクリップボードにコピーしました！</div>
+
+  <script>
+    const projectId = window.location.pathname.split('/').pop();
+    let cachedHtml = '';
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const icon = document.getElementById('triggerIcon');
+      sidebar.classList.toggle('open');
+      if (sidebar.classList.contains('open')) {
+        icon.innerText = 'chevron_left';
+      } else {
+        icon.innerText = 'menu';
+      }
+    }
+
+    async function initializeViewer() {
+      document.getElementById('displayId').innerText = projectId;
+      const container = document.getElementById('appContainer');
+
+      try {
+        // ① 統計情報を取得してサイドバーにマッピング
+        const statsRes = await fetch('/api/stats/' + projectId);
+        if (!statsRes.ok) {
+          container.srcdoc = "<h2 style='color:white; font-family:monospace; text-align:center; margin-top:20%;'>ページが見つかりません</h2>";
+          return;
+        }
+        const stats = await statsRes.json();
+        document.getElementById('displayVersion').innerText = `v${stats.version}`;
+        document.getElementById('displayViews').innerText = stats.views;
+
+        // ② アプリケーションコアのロード（高速LocalStorage戦略を適用）
+        const cachedData = localStorage.getItem('app_' + projectId);
+        let appData = cachedData ? JSON.parse(cachedData) : null;
+
+        if (!appData || appData.version !== stats.version) {
+          const rawRes = await fetch('/api/raw/' + projectId);
+          const rawData = await rawRes.json();
+          appData = { html: rawData.html, version: rawData.version };
+          localStorage.setItem('app_' + projectId, JSON.stringify(appData));
+        }
+
+        cachedHtml = appData.html;
+        
+        // iframe内部にアプリケーションを展開
+        container.srcdoc = cachedHtml;
+
+        // アクセス回数の表記をrawリクエスト後に最新化する
+        document.getElementById('displayViews').innerText = parseInt(stats.views) + 1;
+
+      } catch (e) {
+        container.srcdoc = "<h2 style='color:white; font-family:monospace; text-align:center; margin-top:20%;'>アプリケーションの読み込みに失敗しました</h2>";
+      }
+    }
+
+    function copySource() {
+      if (!cachedHtml) return;
+      navigator.clipboard.writeText(cachedHtml).then(() => {
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', initializeViewer);
+  </script>
+</body>
+</html>
