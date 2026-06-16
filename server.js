@@ -2,8 +2,13 @@ import express from 'express';
 import { createClient } from '@libsql/client';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
@@ -52,7 +57,6 @@ ${html}
       projectId = 'cr-' + crypto.randomBytes(4).toString('hex');
     }
 
-    // ON CONFLICT を使わず、明示的な分岐でINSERT/UPDATEを行うことでTursoのマイグレーションジョブエラーを回避
     if (isExisting) {
       await db.execute({
         sql: "UPDATE pages SET html_content = ?, version = ? WHERE id = ?",
@@ -114,9 +118,39 @@ app.get('/api/raw/:id', async (req, res) => {
   }
 });
 
-// ④ 他の人がアクセスしたときの配信ルート
+// 🛠【追加】全プロジェクトの一覧を取得するAPI（ダッシュボード用）
+app.get('/api/projects', async (req, res) => {
+  try {
+    const result = await db.execute("SELECT id, version, views FROM pages ORDER BY id DESC");
+    res.json(result.rows);
+  } catch (error) {
+    console.error("【/api/projects エラー詳細】:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 🛠【追加】特定のプロジェクトを削除するAPI（ダッシュボード用）
+app.delete('/api/project/:id', async (req, res) => {
+  try {
+    await db.execute({
+      sql: "DELETE FROM pages WHERE id = ?",
+      args: [req.params.id]
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("【DELETE /api/project/:id エラー詳細】:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 🛠【追加】ビュアー画面（サイドバー付き）をマッピングするルート
+app.get('/view/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'viewer.html'));
+});
+
+// ④ 他の人がアクセスしたときの配信ルート（従来通りのダイレクト表示）
 app.get('/:id', (req, res, next) => {
-  if (req.params.id.startsWith('api') || req.params.id.includes('.')) {
+  if (req.params.id.startsWith('api') || req.params.id.includes('.') || req.params.id === 'dashboard') {
     return next();
   }
 
