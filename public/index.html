@@ -39,18 +39,32 @@
       gap: 12px;
     }
 
-    button {
-      background: #2563eb;
+    /* 現代風にリファインされたボタン基本スタイル */
+    button, .dashboard-link {
+      background: #3b82f6;
       color: white;
       border: none;
       padding: 8px 16px;
       border-radius: 6px;
-      font-size: 14px;
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
 
-    button:hover {
-      background: #1d4ed8;
+    button:hover, .dashboard-link:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1);
+    }
+
+    button:active, .dashboard-link:active {
+      transform: translateY(0);
     }
 
     /* 3点リーダー・ドロップダウンのスタイル */
@@ -60,25 +74,26 @@
     }
 
     .menu-trigger {
-      background: transparent;
+      background: #1e293b;
       color: #94a3b8;
-      border: none;
-      padding: 6px;
-      border-radius: 50%;
+      border: 1px solid #334155;
+      padding: 8px;
+      border-radius: 6px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s, color 0.2s;
+      transition: all 0.2s;
     }
 
     .menu-trigger:hover {
-      background: #1e293b;
+      background: #334155;
       color: #f8fafc;
+      border-color: #475569;
     }
 
     .menu-trigger .material-icons {
-      font-size: 24px;
+      font-size: 20px;
     }
 
     .dropdown-menu {
@@ -90,10 +105,11 @@
       background: #1e293b;
       border: 1px solid #334155;
       border-radius: 8px;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
       z-index: 100;
       min-width: 160px;
       overflow: hidden;
+      padding: 4px;
     }
 
     .dropdown-menu.show {
@@ -105,17 +121,22 @@
       background: transparent;
       color: #e2e8f0;
       border: none;
-      border-radius: 0;
-      padding: 10px 16px;
-      font-size: 14px;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 500;
       text-align: left;
       display: flex;
       align-items: center;
       gap: 8px;
+      box-shadow: none;
     }
 
     .dropdown-item:hover {
       background: #334155;
+      color: #ffffff;
+      transform: none;
+      box-shadow: none;
     }
 
     .dropdown-item .material-icons {
@@ -137,16 +158,19 @@
       background: #020617;
       border-radius: 8px;
       overflow: hidden;
+      border: 1px solid #1e293b;
     }
 
     .editor label {
-      padding: 6px 10px;
+      padding: 8px 12px;
       font-size: 12px;
-      background: #020617;
-      color: #93c5fd;
+      font-weight: 600;
+      background: #090d16;
+      color: #38bdf8;
       border-bottom: 1px solid #1e293b;
       cursor: pointer;
       user-select: none;
+      letter-spacing: 0.05em;
     }
 
     textarea {
@@ -154,10 +178,11 @@
       background: #020617;
       color: #e5e7eb;
       border: none;
-      padding: 10px;
+      padding: 12px;
       resize: none;
       outline: none;
       font-size: 14px;
+      line-height: 1.5;
     }
 
     /* モーダル背景（オーバーレイ） */
@@ -167,7 +192,8 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(2, 6, 17, 0.7);
+      backdrop-filter: blur(4px);
       display: flex;
       align-items: flex-end; /* 下から出すための配置 */
       justify-content: center;
@@ -189,6 +215,9 @@
       width: 100%;
       max-width: 600px;
       border-radius: 16px 16px 0 0; /* 上側だけ丸みを持たせる */
+      border-top: 1px solid #334155;
+      border-left: 1px solid #334155;
+      border-right: 1px solid #334155;
       padding: 24px;
       max-height: 80vh;
       display: flex;
@@ -213,19 +242,22 @@
 
     .modal-header h2 {
       margin: 0;
-      font-size: 18px;
+      font-size: 16px;
       color: #f8fafc;
     }
 
     .close-btn {
       background: transparent;
       font-size: 20px;
-      padding: 4px 8px;
+      padding: 4px 10px;
       color: #94a3b8;
+      border-radius: 6px;
     }
     .close-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: #334155;
       color: #f8fafc;
+      transform: none;
+      box-shadow: none;
     }
 
     /* 保存一覧のリスト */
@@ -241,22 +273,24 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 14px;
+      padding: 12px 16px;
       background: #0f172a;
-      border-radius: 6px;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
       margin-bottom: 8px;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s;
     }
 
     .data-item:hover {
       background: #1e293b;
-      outline: 1px solid #3b82f6;
+      border-color: #3b82f6;
     }
 
     .data-name {
-      font-weight: bold;
+      font-weight: 600;
       color: #e2e8f0;
+      font-size: 14px;
     }
 
     .item-actions {
@@ -266,17 +300,19 @@
 
     .delete-btn {
       background: #ef4444;
-      padding: 4px 12px;
+      padding: 6px 12px;
       font-size: 12px;
     }
     .delete-btn:hover {
       background: #dc2626;
+      box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
     }
 
     .empty-message {
       text-align: center;
       color: #94a3b8;
-      padding: 20px 0;
+      padding: 30px 0;
+      font-size: 14px;
     }
 
     /* 独自UIダイアログ用（中央にポップアップ表示） */
@@ -286,7 +322,8 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(2, 6, 17, 0.7);
+      backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -303,12 +340,12 @@
 
     .custom-dialog {
       background: #1e293b;
-      padding: 20px;
-      border-radius: 8px;
+      padding: 24px;
+      border-radius: 12px;
       width: 90%;
-      max-width: 400px;
+      max-width: 420px;
       border: 1px solid #334155;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
     }
 
     .custom-dialog h3 {
@@ -319,32 +356,33 @@
     }
 
     .custom-dialog p {
-      font-size: 14px;
-      color: #cbd5e1;
-      margin-bottom: 16px;
-      line-height: 1.5;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 20px;
+      line-height: 1.6;
     }
 
     .custom-dialog input {
       width: 100%;
-      padding: 8px 12px;
+      padding: 10px 14px;
       background: #0f172a;
       border: 1px solid #334155;
-      border-radius: 4px;
+      border-radius: 6px;
       color: #e5e7eb;
       font-size: 14px;
       outline: none;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      transition: border-color 0.2s;
     }
 
     .custom-dialog input:focus {
-      border-color: #2563eb;
+      border-color: #3b82f6;
     }
 
     .dialog-buttons {
       display: flex;
       justify-content: flex-end;
-      gap: 8px;
+      gap: 10px;
     }
 
     .dialog-btn-cancel {
@@ -352,6 +390,7 @@
     }
     .dialog-btn-cancel:hover {
       background: #334155;
+      box-shadow: 0 4px 6px -1px rgba(71, 85, 105, 0.2);
     }
 
     .dialog-btn-danger {
@@ -359,39 +398,44 @@
     }
     .dialog-btn-danger:hover {
       background: #dc2626;
+      box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
     }
 
     /* デプロイ結果表示用のスタイル */
     .deploy-success-box {
       background: #0f172a;
-      border: 1px solid #233554;
-      padding: 15px;
-      border-radius: 6px;
-      margin-top: 10px;
+      border: 1px solid #1e293b;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 14px;
+      font-size: 13px;
+      line-height: 1.6;
     }
     .url-display {
       background: #020617;
-      padding: 10px;
-      border-radius: 4px;
-      color: #34d399;
+      padding: 12px;
+      border-radius: 6px;
+      color: #10b981;
       word-break: break-all;
       font-size: 13px;
-      margin: 10px 0;
+      margin: 14px 0;
       border: 1px solid #1e293b;
+      font-weight: 600;
     }
     
     /* セレクションダイアログ用のボタン配置調整 */
     .selection-buttons {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-top: 15px;
+      gap: 8px;
+      margin-top: 16px;
     }
     .selection-buttons button {
       width: 100%;
       padding: 12px;
       text-align: center;
-      font-size: 14px;
+      font-size: 13px;
+      justify-content: center;
     }
   </style>
 </head>
@@ -399,6 +443,9 @@
   <header>
     <h1>💻 Code Runner</h1>
     <div class="actions">
+      <a href="/dashboard.html" class="dashboard-link" style="background: #1e293b; border: 1px solid #334155; color: #cbd5e1;">
+        <span class="material-icons" style="font-size: 18px; color: #94a3b8;">dashboard</span>ダッシュボード
+      </a>
       <div class="dropdown">
         <button class="menu-trigger" onclick="toggleMenu(event)" title="メニュー">
           <span class="material-icons">more_vert</span>
@@ -415,7 +462,9 @@
           </button>
         </div>
       </div>
-      <button onclick="runCode()" style="background: #10b981;">▶ デプロイ</button>
+      <button onclick="runCode()" style="background: #10b981;">
+        <span class="material-icons" style="font-size: 18px;">rocket_launch</span>デプロイ
+      </button>
     </div>
   </header>
 
@@ -469,17 +518,17 @@ console.log("Hello JavaScript!");
     // ▶ デプロイボタンを押した時に選択を迫るメニュー
     function runCode() {
       // 既存のプロジェクトIDがあるかどうかでボタンを無効化/有効化する条件分岐用の文言
-      const updateButtonDisabled = currentProjectId ? "" : "disabled style='background:#475569; cursor:not-allowed; opacity:0.5;'";
+      const updateButtonDisabled = currentProjectId ? "" : "disabled style='background:#334155; border:1px solid #475569; cursor:not-allowed; opacity:0.4; transform:none; box-shadow:none;'";
 
       const selectionHtml = `
         <h3>🛠 実行アクションの選択</h3>
         <p>このコードをどのように処理しますか？目的のアクションを選択してください。</p>
         <div class="selection-buttons">
           <button onclick="executeDeployAction(false)" style="background: #10b981;">✨ 新規プロジェクトとしてデプロイ</button>
-          <button onclick="executeDeployAction(true)" ${updateButtonDisabled} style="background: #2563eb;">🔄 既存のプロジェクトを更新する (ID: ${currentProjectId || 'なし'})</button>
+          <button onclick="executeDeployAction(true)" ${updateButtonDisabled} style="background: #3b82f6;">🔄 既存のプロジェクトを更新する (ID: ${currentProjectId || 'なし'})</button>
           <button onclick="executeTestAction()" style="background: #f59e0b;">🧪 デプロイせずにテスト実行する</button>
         </div>
-        <div class="dialog-buttons" style="margin-top: 15px;">
+        <div class="dialog-buttons" style="margin-top: 20px;">
           <button class="dialog-btn-cancel" onclick="closeCustomDialog()">キャンセル</button>
         </div>
       `;
@@ -521,9 +570,9 @@ console.log("Hello JavaScript!");
               ・現在のバージョン: v${stats.version}<br>
               ・これまでの累計アクセス数: ${stats.views} 回
             </div>
-            <div class="dialog-buttons" style="margin-top:15px;">
+            <div class="dialog-buttons" style="margin-top:20px;">
               <button class="dialog-btn-cancel" onclick="copyToClipboard('${fullUrl}', 'URLをコピーしました！')">URLをコピー</button>
-              <button onclick="window.open('${fullUrl}', '_blank')">サイトを開く</button>
+              <button onclick="window.open('${fullUrl}', '_blank')" style="background: #10b981;">サイトを開く</button>
               <button onclick="closeCustomDialog()" style="background:#475569;">閉じる</button>
             </div>
           `;
@@ -687,7 +736,7 @@ ${js}
         <input type="text" id="saveNameInput" placeholder="名前を入力してください">
         <div class="dialog-buttons">
           <button class="dialog-btn-cancel" onclick="closeCustomDialog()">キャンセル</button>
-          <button onclick="executeSave()">保存</button>
+          <button onclick="executeSave()" style="background: #10b981;">保存</button>
         </div>
       `;
       openCustomDialog(htmlContent);
@@ -754,10 +803,10 @@ ${js}
     function confirmLoad(key) {
       const htmlContent = `
         <h3>データの読込確認</h3>
-        <p>「${key}」を読み込みますか？<br><span style="color: #ef4444; font-size: 12px;">※現在エディタに入力されているコードは上書きされます。</span></p>
+        <p>「${key}」を読み込みますか？<br><span style="color: #ef4444; font-size: 11px;">※現在エディタに入力されているコードは上書きされます。</span></p>
         <div class="dialog-buttons">
           <button class="dialog-btn-cancel" onclick="closeCustomDialog()">キャンセル</button>
-          <button onclick="executeLoad('${key}')">読み込む</button>
+          <button onclick="executeLoad('${key}')" style="background: #3b82f6;">読み込む</button>
         </div>
       `;
       openCustomDialog(htmlContent);
