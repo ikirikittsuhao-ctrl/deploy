@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard - Code Runner</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; font-family: Consolas, Monaco, monospace; }
+    body { margin: 0; background: #0f172a; color: #e5e7eb; min-height: 100vh; display: flex; flex-direction: column; }
+    header { padding: 12px 16px; background: #020617; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .container { flex: 1; max-width: 1200px; width: 100%; margin: 0 auto; padding: 24px; }
+    .back-btn { background: #334155; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .back-btn:hover { background: #475569; }
+    .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 24px; }
+    .project-card { background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s; }
+    .project-card:hover { transform: translateY(-2px); border-color: #3b82f6; }
+    .project-id { font-size: 16px; font-weight: bold; color: #38bdf8; margin: 0 0 12px 0; word-break: break-all; }
+    .project-stats { font-size: 13px; color: #94a3b8; margin-bottom: 16px; line-height: 1.6; }
+    .project-stats b { color: #e2e8f0; }
+    .card-actions { display: flex; gap: 8px; }
+    .card-actions a, .card-actions button { flex: 1; text-align: center; padding: 8px; border-radius: 6px; font-size: 13px; cursor: pointer; text-decoration: none; border: none; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+    .btn-view { background: #10b981; color: white; }
+    .btn-view:hover { background: #059669; }
+    .btn-delete { background: #ef4444; color: white; }
+    .btn-delete:hover { background: #dc2626; }
+    .empty-message { grid-column: 1 / -1; text-align: center; padding: 40px; color: #94a3b8; background: #020617; border-radius: 8px; border: 1px dashed #334155; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span class="material-icons">dashboard</span> デプロイ済アプリ一覧</h1>
+    <a href="/" class="back-btn"><span class="material-icons">arrow_back</span>エディタに戻る</a>
+  </header>
+
+  <div class="container">
+    <div class="project-grid" id="projectGrid">
+      <div class="empty-message">読み込み中...</div>
+    </div>
+  </div>
+
+  <script>
+    async function loadProjects() {
+      const grid = document.getElementById('projectGrid');
+      try {
+        const res = await fetch('/api/projects');
+        if (!res.ok) throw new Error();
+        const projects = await res.json();
+
+        if (projects.length === 0) {
+          grid.innerHTML = '<div class="empty-message">デプロイされたプロジェクトはまだありません。</div>';
+          return;
+        }
+
+        grid.innerHTML = projects.map(p => `
+          <div class="project-card" id="card-${p.id}">
+            <div class="project-id">${p.id}</div>
+            <div class="project-stats">
+              ・現在のバージョン: <b>v${p.version}</b><br>
+              ・累計アクセス数: <b>${p.views} 回</b>
+            </div>
+            <div class="card-actions">
+              <a href="/view/${p.id}" target="_blank" class="btn-view"><span class="material-icons">visibility</span>開く</a>
+              <button onclick="deleteProject('${p.id}')" class="btn-delete"><span class="material-icons">delete</span>削除</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        grid.innerHTML = '<div class="empty-message" style="color:#ef4444;">データの取得に失敗しました。</div>';
+      }
+    }
+
+    async function deleteProject(id) {
+      if (!confirm(`プロジェクト ${id} を削除してもよろしいですか？`)) return;
+      try {
+        const res = await fetch(`/api/project/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          const card = document.getElementById(`card-${id}`);
+          if (card) card.remove();
+          if (document.getElementById('projectGrid').children.length === 0) {
+            document.getElementById('projectGrid').innerHTML = '<div class="empty-message">デプロイされたプロジェクトはまだありません。</div>';
+          }
+        } else {
+          alert('削除に失敗しました。');
+        }
+      } catch (e) {
+        alert('通信エラーが発生しました。');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadProjects);
+  </script>
+</body>
+</html>
