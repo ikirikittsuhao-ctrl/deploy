@@ -60,6 +60,7 @@ ${html}
 
     res.json({ success: true, id: projectId, version: nextVersion });
   } catch (error) {
+    console.error("【/api/deploy エラー詳細】:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -77,6 +78,7 @@ app.get('/api/stats/:id', async (req, res) => {
       res.status(404).json({ error: 'Not Found' });
     }
   } catch (error) {
+    console.error("【/api/stats/:id エラー詳細】:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -100,6 +102,7 @@ app.get('/api/raw/:id', async (req, res) => {
       res.status(404).json({ error: 'Not Found' });
     }
   } catch (error) {
+    console.error("【/api/raw/:id エラー詳細】:", error);
     res.status(500).json({ error: error.message });
   }
 });
