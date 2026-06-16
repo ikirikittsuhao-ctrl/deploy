@@ -105,9 +105,9 @@ app.get('/api/raw/:id', async (req, res) => {
 });
 
 // ④ 他の人がアクセスしたときの配信ルート
-app.get('/:id', (req, res) => {
+app.get('/:id', (req, res, next) => {
   if (req.params.id.startsWith('api') || req.params.id.includes('.')) {
-    return express.static('public')(req, res);
+    return next();
   }
 
   res.setHeader('Content-Type', 'text/html');
